@@ -6,6 +6,13 @@ coverage/
 !.env.example
 *.tsbuildinfo
 next-env.d.ts
+outputs/
+cloud-site/node_modules/
+cloud-site/public/monaco/
+cloud-site/dist/
+cloud-site/.sites-runtime/
+cloud-site/.wrangler/
+cloud-site/.vinext/
 public/monaco/
 .pnpm-store/
 .pnpm-cache/

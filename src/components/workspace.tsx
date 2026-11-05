@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
-import { extensions, languageLabels, languages, type ChatMessage, type MentorRequest, type MentorResponse } from "@/lib/contracts";
+import { extensions, languageLabels, languages, mentorResponseSchema, type ChatMessage, type MentorRequest } from "@/lib/contracts";
 import { examples, findDemoExample, type Example } from "@/lib/examples";
 import { initialWorkspace, newSession, restoreWorkspace, STORAGE_KEY, type Session, type WorkspaceState } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -141,9 +141,14 @@ export default function Workspace() {
         signal: AbortSignal.any([abort.signal, AbortSignal.timeout(45_000)]),
         body: JSON.stringify({ action, mode: active.mode, code: active.code, problem: active.problem, language: active.language, history, hintLevel: action === "start" ? 0 : active.hintLevel }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Не удалось получить ответ. Попробуйте снова.");
-      const result = data as MentorResponse;
+      const data: unknown = await response.json();
+      if (!response.ok) {
+        const errorText = data && typeof data === "object" && "error" in data ? data.error : null;
+        throw new Error(typeof errorText === "string" ? errorText : "Не удалось получить ответ. Попробуйте снова.");
+      }
+      const parsedResponse = mentorResponseSchema.safeParse(data);
+      if (!parsedResponse.success) throw new Error("Наставник вернул некорректный ответ. Попробуйте снова.");
+      const result = parsedResponse.data;
       const assistant: ChatMessage = { role: "assistant", content: result.message, kind: action === "hint" ? "hint" : "question", hintLevel: result.hintLevel };
       setWorkspace(w => ({ ...w, sessions: w.sessions.map(s => s.id === active.id ? {
         ...s, messages: [...history, assistant], hintLevel: result.hintLevel,

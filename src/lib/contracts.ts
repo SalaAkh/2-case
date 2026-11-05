@@ -34,13 +34,14 @@ export const mentorRequestSchema = z.object({
   if (data.history.reduce((sum, item) => sum + item.content.length, 0) > 45000) invalid("Диалог слишком длинный. Начните новый разбор.");
 });
 export type MentorRequest = z.infer<typeof mentorRequestSchema>;
-export type MentorResponse = {
-  message: string;
-  mode: "demo" | "live";
-  hintLevel: number;
-  guarded: boolean;
-  source: "scripted-demo" | "openai" | "safety-fallback";
-};
+export const mentorResponseSchema = z.object({
+  message: z.string().min(1).max(4000),
+  mode: z.enum(["demo", "live"]),
+  hintLevel: z.number().int().min(0).max(3),
+  guarded: z.boolean(),
+  source: z.enum(["scripted-demo", "openai", "safety-fallback"]),
+});
+export type MentorResponse = z.infer<typeof mentorResponseSchema>;
 export const mentorDraftSchema = z.object({
   acknowledgement: z.string(),
   concept: z.string(),

@@ -4,5 +4,5 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "node_modules/**", "public/monaco/**", ".pnpm-*/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "node_modules/**", "public/monaco/**", ".pnpm-*/**", "next-env.d.ts", "cloud-site/**", "outputs/**"]),
 ]);
