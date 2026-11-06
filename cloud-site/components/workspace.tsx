@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight, ArrowUp, ArrowUpRight, Asterisk, BookOpen, Check, CheckCheck, ChevronDown, ChevronRight,
   Code2, Copy, CornerDownLeft, FileCode2, History, Lightbulb, Loader2, MessageSquare,
   Moon, PanelLeftClose, Plus, RotateCcw, ShieldCheck, Sparkles, Square, Sun, Terminal,
-  Trash2, X, CircleHelp, Command, CircleAlert, ExternalLink,
+  Trash2, X, CircleHelp, Command, CircleAlert, ExternalLink, FlaskConical,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
@@ -14,6 +15,7 @@ import { extensions, languageLabels, languages, mentorResponseSchema, type ChatM
 import { examples, findDemoExample, type Example } from "@/lib/examples";
 import { initialWorkspace, newSession, restoreWorkspace, STORAGE_KEY, type Session, type WorkspaceState } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import "./investigation-lab.css";
 
 const CodeEditor = dynamic(() => import("./code-editor"), { ssr: false, loading: () => <div className="editor-loading"><Loader2 size={18} className="spin" /> Загружаем редактор…</div> });
 type Busy = { action: MentorRequest["action"]; userText?: string; sessionId: string };
@@ -225,6 +227,11 @@ export default function Workspace() {
           <div><div className="eyebrow"><span />TOMORROW SCHOOL <span className="eyebrow-divider">/</span> ZERO-SPOILER DEBUGGER</div><h1>Думайте смелее.<br /><span>Решение — за вами.</span></h1><p>Ваш код, ваши открытия. Наставник поможет найти ошибку<br className="intro-break" /> через вопросы, а не готовые ответы.</p></div>
           <button className="zero-badge" onClick={() => setModal("help")}><span className="method-number">01—03</span><span>От вопроса к решению<span>Три уровня подсказок</span></span><ArrowRight size={18} /></button>
         </div>
+        <section className="workspace-lab-entry" aria-label="Новый учебный путь">
+          <FlaskConical size={23} />
+          <div><strong>Найдите ошибку. А затем — станьте наставником.</strong><p>Прогноз выполнения → эксперимент → объяснение новичку → новая задача. Три учебных сценария без API-ключа.</p></div>
+          <div className="workspace-lab-actions"><Button asChild><Link href={`/investigation?case=${sample?.id ?? "index"}`}>Начать расследование<ArrowRight size={15} /></Link></Button><Link href="/investigation?mode=jury">Демо для жюри<ArrowUpRight size={13} /></Link></div>
+        </section>
         <div className={cn("mode-banner", active.mode === "live" && "live-banner")}>
           <div><span className="banner-dot" /><strong>{active.mode === "demo" ? "Деморежим" : "OpenAI"}</strong><span className="banner-description">{active.mode === "demo" ? "Подготовленные диалоги для трёх учебных примеров. Это не ответы ИИ." : "Наставник учитывает ваш код и весь текущий диалог."}</span></div>
           <div className="mode-switch" aria-label="Режим наставника"><button className={active.mode === "demo" ? "selected" : ""} aria-pressed={active.mode === "demo"} disabled={!!busy || !status?.demoAvailable} onClick={() => switchMode("demo")}>Демо</button><button className={active.mode === "live" ? "selected" : ""} aria-pressed={active.mode === "live"} disabled={!!busy || !status?.liveAvailable} title={status?.liveAvailable ? "Разбор с OpenAI" : "Добавьте OPENAI_API_KEY в .env.local и перезапустите сервер"} onClick={() => switchMode("live")}><Sparkles size={11} />OpenAI{!status?.liveAvailable && <span className="not-connected-dot" />}</button></div>

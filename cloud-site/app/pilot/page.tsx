@@ -1,0 +1,22 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, ArrowUpRight, FlaskConical } from "lucide-react";
+import "@/components/investigation-lab.css";
+
+export const metadata: Metadata = { title: "Пилот и методика · Zero-Spoiler" };
+
+export default function PilotPage() {
+  return <div className="lab-page">
+    <header className="lab-header"><Link href="/" className="lab-brand"><span className="brand-mark"><ArrowUpRight size={23} /></span><span>tomorrow<span className="lab-brand-dot">.</span><small>SCHOOL / ZERO-SPOILER</small></span></Link><Link href="/investigation" className="lab-back"><ArrowLeft size={15} />К расследованию</Link></header>
+    <main className="lab-main">
+      <div className="lab-method-hero"><div className="eyebrow"><span />ПРАКТИКА С НАБЛЮДАЕМЫМ РЕЗУЛЬТАТОМ</div><h1>Как проверить,<br /><span>что стало понятнее?</span></h1><p>Студент формулирует гипотезу, сравнивает прогноз с наблюдениями, объясняет правило новичку и применяет его в другой ситуации. Паспорт сохраняет этот путь; преподаватель может обсудить его со студентом.</p></div>
+      <div className="lab-method-grid">
+        <section><span className="lab-section-kicker">01 / ДЕМОНСТРАЦИЯ ДЛЯ ЖЮРИ</span><h2>Дайте попробовать самому.</h2><ol><li><strong>0:00–0:30.</strong> Выберите «Один шаг за границу». Сформулируйте гипотезу и ответьте на короткий вопрос.</li><li><strong>0:30–1:00.</strong> Сделайте три прогноза. Откройте значения переменных и найдите расхождение.</li><li><strong>1:00–1:30.</strong> Станьте наставником: объясните ошибку виртуальному новичку и ответьте на его уточнения.</li><li><strong>1:30–2:00.</strong> Примените правило в новой задаче и откройте карту рассуждений. Темп индивидуален.</li></ol><p>Фраза для защиты: «Студент приходит с ошибкой в коде, а уходит с правилом, которое проверил в новой ситуации».</p><Link className="ui-button button-primary button-default" href="/investigation?mode=jury">Запустить демо<ArrowRight size={15} /></Link></section>
+        <section><span className="lab-section-kicker">02 / РЕАЛЬНЫЙ ПИЛОТ</span><h2>Сначала соберите наблюдения.</h2><ol><li>Пригласите 5–10 добровольцев. Объясните цель, состав выгрузки и право отказаться. Не используйте имена или email в файлах.</li><li>Каждый проходит один сценарий впервые. Не подсказывайте правильные варианты; отмечайте вмешательства отдельно.</li><li>Участник сам решает, передавать ли файл «Данные пилота». Файл остаётся на его устройстве до передачи.</li><li>По случайному номеру попытки исключите дубликаты. Отдельно учитывайте повторные проходы и незавершённые сессии.</li></ol><p>Результаты участников здесь ещё не опубликованы. Подготовленный демосценарий не является данными исследования.</p><Link className="ui-button button-primary button-default" href="/investigation?mode=pilot"><FlaskConical size={15} />Участвовать добровольно</Link></section>
+        <section><span className="lab-section-kicker">03 / ЧТО СРАВНИВАТЬ</span><h2>Первые ответы и объяснения.</h2><ul><li>Верный ответ до практики и верный первый ответ в задаче на перенос. Показывайте число участников и абсолютные значения.</li><li>Число попыток в новой задаче и в уточняющих вопросах. Первые ошибки не стираются повторными ответами.</li><li>Совпадения прогнозов с наблюдениями. Длительность включает паузы и сама по себе не означает качество обучения.</li><li>При отдельном согласии обсудите паспорт: может ли участник объяснить правило своими словами? Свободный текст автоматически не оценивается.</li></ul></section>
+        <section><span className="lab-section-kicker">04 / ГРАНИЦЫ ВЫВОДОВ</span><h2>Открыто о методике.</h2><p>Вопросы до и после различаются и не откалиброваны по сложности. Доступны повторные попытки и направляющие вопросы. Маленькая добровольная выборка без контрольной группы не устанавливает причинный эффект обучения.</p><p>Наблюдения подготовлены для трёх фиксированных примеров. Свободный код здесь не выполняется. Виртуальный новичок — учебная роль, а не генерация ответов ИИ.</p><p>Данные сохраняются в localStorage конкретного браузера. В выгрузке пилота нет свободных текстов, аккаунтов или идентификаторов устройства. Отдельной отправки ответов на сервер приложение не делает.</p></section>
+      </div>
+      <footer className="lab-footer"><span>TOMORROW SCHOOL / THINK. TEST. TEACH.</span><div><Link href="/">Свободный разбор</Link><Link href="/investigation">Самостоятельная практика</Link></div></footer>
+    </main>
+  </div>;
+}
