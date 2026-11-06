@@ -1,6 +1,8 @@
 """Build editable PPTX, matching PDF slides, and the two-speaker script PDF."""
 from pathlib import Path
+import shutil
 import re
+import fitz
 from xml.sax.saxutils import escape
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -171,4 +173,92 @@ for para in notes.split('\n\n'):
 def footer(c,doc):
  c.setFont('Deck',8);c.setFillColor(HexColor('#666666'));c.drawString(42,25,'Zero-Spoiler · сценарий на двоих');c.drawRightString(A4[0]-42,25,str(doc.page))
 SimpleDocTemplate(str(ROOT/'pitch.pdf'),pagesize=A4,rightMargin=42,leftMargin=42,topMargin=38,bottomMargin=42,title='Zero-Spoiler — питч на двоих',author='Команда Zero-Spoiler').build(flow,onFirstPage=footer,onLaterPages=footer)
-print('Created zero-spoiler.pptx, zero-spoiler.pdf and pitch.pdf')
+
+# Publish the same files and a browser-only reader for phones without a PDF viewer.
+public = ROOT.parents[1] / 'public'
+downloads = public / 'presentation'
+downloads.mkdir(parents=True, exist_ok=True)
+for filename in ['zero-spoiler.pptx', 'zero-spoiler.pdf', 'pitch.pdf']:
+    shutil.copyfile(ROOT / filename, downloads / filename)
+
+slide_titles = [
+    'От ошибки к самостоятельному решению', 'Проблема', 'Учебный путь',
+    'Смена ролей', 'Паспорт понимания', 'Работающий MVP',
+    'Добровольный пилот', 'Попробуйте сами',
+]
+figures = []
+with fitz.open(ROOT / 'zero-spoiler.pdf') as deck:
+    for i, page in enumerate(deck):
+        filename = f'slide-{i+1:02d}.png'
+        page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False).save(downloads / filename)
+        figures.append(
+            f'<figure><figcaption><span>{i+1:02d} / 08</span> {slide_titles[i]}</figcaption>'
+            f'<a href="/presentation/{filename}" aria-label="Открыть слайд {i+1} крупнее">'
+            f'<img src="/presentation/{filename}" width="1440" height="810" '
+            f'alt="Слайд {i+1}: {slide_titles[i]}" loading="{"eager" if i == 0 else "lazy"}"></a></figure>'
+        )
+
+def inline_html(value):
+    return re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', escape(value))
+
+def paragraphs_html(value):
+    result = []
+    for paragraph in value.strip().split('\n\n'):
+        if paragraph.startswith('- '):
+            items = ''.join(f'<li>{inline_html(line[2:])}</li>' for line in paragraph.splitlines())
+            result.append(f'<ul>{items}</ul>')
+        else:
+            result.append('<p>' + inline_html(paragraph).replace('\n', '<br>') + '</p>')
+    return ''.join(result)
+
+sections = re.split(r'^## (.+)\n', notes, flags=re.M)
+script_html = ''.join(
+    f'<details{" open" if i == 1 else ""}><summary>{escape(sections[i])}</summary>'
+    f'<div class="script-text">{paragraphs_html(sections[i+1])}</div></details>'
+    for i in range(1, len(sections), 2)
+)
+reader = '''<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#101112">
+<title>Презентация и питч · Zero-Spoiler</title>
+<style>
+*{box-sizing:border-box}html{scroll-padding-top:20px}
+body{margin:0;background:#101112;color:#f4f5f0;font:16px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit;text-decoration:none}a:focus-visible,summary:focus-visible{outline:2px solid #d3f950;outline-offset:4px}
+header,main,footer{max-width:1160px;margin:auto;padding:24px}
+header{display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid #363940}
+header a{display:inline-flex;align-items:center;min-height:44px;font-size:14px}.brand{font-weight:750;color:#d3f950}
+main{padding-top:44px}h1{font-size:clamp(34px,6vw,58px);line-height:1.1;letter-spacing:-1.8px;margin:0 0 20px}
+h2{font-size:28px;line-height:1.25;letter-spacing:-.7px;margin:0 0 12px}p{margin:0 0 18px}
+.kicker{font-size:11px;letter-spacing:1.4px;color:#d3f950;margin-bottom:16px}.intro{max-width:700px;color:#b4b8c1}
+.downloads{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:28px 0 24px}
+.download{display:flex;flex-direction:column;justify-content:space-between;gap:16px;border:1px solid #363940;border-radius:12px;padding:22px;background:#1c1e21;min-height:150px}
+.download:hover{border-color:#d3f950}.download small{color:#b4b8c1}.download span{color:#d3f950;font-size:14px}
+nav{display:flex;gap:12px;flex-wrap:wrap}nav a{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid #363940;border-radius:7px}
+nav a:first-child{background:#d3f950;color:#101112;border-color:#d3f950;font-weight:650}
+section{margin-top:54px}section>p{color:#b4b8c1}.slides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:24px}
+figure{margin:0;min-width:0}figcaption{font-size:14px;margin-bottom:10px;color:#b4b8c1}figcaption span{color:#d3f950;font-size:11px;margin-right:10px}
+figure a{display:block}img{display:block;width:100%;height:auto;border:1px solid #363940;border-radius:8px}
+details{border-top:1px solid #363940}details:last-child{border-bottom:1px solid #363940}
+summary{cursor:pointer;padding:20px 4px;font-weight:650;min-height:60px}details[open]>summary{color:#d3f950}
+.script-text{max-width:800px;padding:0 4px 14px;overflow-wrap:anywhere;white-space:normal}.script-text p{white-space:normal}.script-text ul{padding-left:24px}.script-text li+li{margin-top:10px}
+footer{color:#b4b8c1;font-size:12px;border-top:1px solid #363940;margin-top:54px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+@media(max-width:640px){header,main,footer{padding-left:18px;padding-right:18px}main{padding-top:32px}.downloads,.slides{grid-template-columns:1fr}.download{min-height:0;padding:18px;gap:10px}.download small{display:block}section{margin-top:40px}h2{font-size:25px}summary{font-size:15px}.slides{gap:24px}}
+</style></head><body>
+<header><a class="brand" href="/">ZERO-SPOILER</a><a href="/investigation?mode=jury">Открыть демо</a></header>
+<main><div class="kicker">TOMORROW SCHOOL / МАТЕРИАЛЫ ЗАЩИТЫ</div>
+<h1>Презентация<br>и питч на двоих.</h1>
+<p class="intro">8 слайдов · 5 минут · парень и девушка. Слайды и реплики можно читать на этой странице. Файлы для показа и репетиции — ниже.</p>
+<div class="downloads">
+<a class="download" href="/presentation/zero-spoiler.pdf"><div><strong>Презентация PDF</strong><br><small>8 слайдов · для просмотра и показа</small></div><span>Открыть PDF</span></a>
+<a class="download" href="/presentation/zero-spoiler.pptx" download><div><strong>PowerPoint</strong><br><small>Редактируемые слайды с заметками</small></div><span>Скачать PPTX</span></a>
+<a class="download" href="/presentation/pitch.pdf"><div><strong>Сценарий PDF</strong><br><small>Реплики, тайминг и ответы жюри</small></div><span>Открыть PDF</span></a>
+</div>
+<nav aria-label="Материалы"><a href="#slides">Смотреть слайды</a><a href="#pitch">Читать питч</a></nav>
+<section id="slides"><h2>Презентация</h2><p>Нажмите на слайд, чтобы открыть его крупнее.</p><div class="slides">__SLIDES__</div></section>
+<section id="pitch"><h2>Сценарий выступления</h2><p>Откройте нужный слайд: внутри реплики, действия и время. В конце — подготовка, вариант на 3 минуты и ответы на вопросы.</p>__SCRIPT__</section>
+</main><footer>ZERO-SPOILER · Исследуй. Объясни. Примени.</footer></body></html>'''
+(public / 'presentation.html').write_text(reader.replace('__SLIDES__', ''.join(figures)).replace('__SCRIPT__', script_html), encoding='utf-8')
+print('Created PPTX, PDF slides, pitch PDF and public/presentation.html with browser previews')

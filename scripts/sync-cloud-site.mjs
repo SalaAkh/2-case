@@ -10,6 +10,8 @@ for (const directory of ["app", "components", "lib"]) {
   await cp(path.join(root, "src", directory), path.join(target, directory), { recursive: true });
 }
 await cp(path.join(root, "scripts/copy-monaco.mjs"), path.join(target, "scripts/copy-monaco.mjs"));
+await cp(path.join(root, "public/presentation"), path.join(target, "public/presentation"), { recursive: true });
+await cp(path.join(root, "public/presentation.html"), path.join(target, "public/presentation.html"));
 const sourcePackage = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
 const hostingPackage = JSON.parse(await readFile(path.join(target, "package.json"), "utf8"));
 for (const [name, version] of Object.entries(sourcePackage.dependencies)) {
