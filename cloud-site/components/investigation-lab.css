@@ -314,6 +314,13 @@
   .workspace-lab-entry p { font-size: 11px; }
   .workspace-lab-actions { padding-left: 0; flex-wrap: wrap; gap: 12px; }
 }
+@media (max-width: 760px) {
+  .lab-theme { width: 44px; height: 44px; flex-shrink: 0; }
+  .lab-header nav > a, .lab-header > .lab-back, .lab-footer a { min-height: 44px; display: inline-flex; align-items: center; }
+  .lab-page .lab-passport-actions > .ui-button { min-height: 46px; }
+  .lab-stepper li { font-size: 9px; }
+  .lab-main { padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+}
 @media print {
   html, body, .lab-page { background: white !important; color: #111 !important; }
   .lab-page { --bg: white; --panel: white; --editor: #fafafa; --text: #111; --muted: #444; --faint: #555; --accent: #365717; --border: #ccc; --border-soft: #ddd; }

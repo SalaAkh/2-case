@@ -169,6 +169,7 @@ export default function Workspace() {
 
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !started) {
         event.preventDefault(); void requestMentor("start");
       }
@@ -205,18 +206,18 @@ export default function Workspace() {
     <aside className="rail" aria-label="Основная навигация">
       <button className="rail-brand" aria-label="Открыть рабочее пространство" onClick={() => { setModal(null); setMobilePanel("code"); }}><Mark /></button>
       <div className="rail-nav">
-        <button className={cn("rail-button", !modal && "rail-active")} aria-label="Рабочее пространство" title="Рабочее пространство" onClick={() => { setModal(null); setSidebarOpen(s => !s); }}><Terminal size={20} /></button>
-        <button className={cn("rail-button", modal === "history" && "rail-active")} aria-label="История разборов" title="История" onClick={() => setModal("history")}><History size={20} /></button>
-        <button className={cn("rail-button", modal === "examples" && "rail-active")} aria-label="Учебные примеры" title="Примеры" onClick={() => setModal("examples")}><BookOpen size={20} /></button>
+        <button className={cn("rail-button", !modal && "rail-active")} aria-label="Рабочее пространство" aria-expanded={sidebarOpen} aria-controls="session-sidebar" title="Рабочее пространство" onClick={() => { setModal(null); setSidebarOpen(s => !s); }}><Terminal size={20} /><span className="rail-mobile-label">Разборы</span></button>
+        <button className={cn("rail-button", modal === "history" && "rail-active")} aria-label="История разборов" title="История" onClick={() => setModal("history")}><History size={20} /><span className="rail-mobile-label">История</span></button>
+        <button className={cn("rail-button", modal === "examples" && "rail-active")} aria-label="Учебные примеры" title="Примеры" onClick={() => setModal("examples")}><BookOpen size={20} /><span className="rail-mobile-label">Примеры</span></button>
       </div>
       <div className="rail-bottom">
-        <button className="rail-button" aria-label={workspace.theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему"} title="Переключить тему" onClick={() => setWorkspace(w => ({ ...w, theme: w.theme === "dark" ? "light" : "dark" }))}>{workspace.theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}</button>
-        <button className="rail-button" aria-label="Помощь" title="Помощь" onClick={() => setModal("help")}><CircleHelp size={20} /></button>
+        <button className="rail-button" aria-label={workspace.theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему"} title="Переключить тему" onClick={() => setWorkspace(w => ({ ...w, theme: w.theme === "dark" ? "light" : "dark" }))}>{workspace.theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}<span className="rail-mobile-label">Тема</span></button>
+        <button className="rail-button" aria-label="Помощь" title="Помощь" onClick={() => setModal("help")}><CircleHelp size={20} /><span className="rail-mobile-label">Помощь</span></button>
         <span className="profile-avatar" title="Локальное рабочее пространство">S<span /></span>
       </div>
     </aside>
     {sidebarOpen && <button className="sidebar-backdrop" aria-label="Закрыть меню" onClick={() => setSidebarOpen(false)} />}
-    <aside className={cn("sidebar", sidebarOpen && "sidebar-open")} aria-label="Разборы и учебные задачи">{sidebar}</aside>
+    <aside id="session-sidebar" className={cn("sidebar", sidebarOpen && "sidebar-open")} aria-label="Разборы и учебные задачи">{sidebar}</aside>
     <div className="workspace-shell">
       <header className="topbar">
         <div className="breadcrumb"><span className="school-symbol" aria-hidden="true"><ArrowUpRight size={23} strokeWidth={2.5} /></span><span className="topbar-school">Tomorrow School</span><span className="breadcrumb-slash">/</span><strong>Zero-Spoiler</strong><span className="beta-tag">LEARNING LAB</span></div>
