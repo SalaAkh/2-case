@@ -7,7 +7,9 @@ export const localeNames: Record<Locale, string> = { ru: "Русский", kk: "
 export const dictionaries: Record<Exclude<Locale, "ru">, Record<string, string>> = { en, kk };
 export function isLocale(value: unknown): value is Locale { return locales.includes(value as Locale); }
 export function translate(locale: Locale, source: string, values: Record<string, string | number> = {}): string {
-  const translated = locale === "ru" ? source : dictionaries[locale][source] ?? source.split("\n\n").map(part => dictionaries[locale][part] ?? part).join("\n\n");
+  const dictionary = locale === "ru" ? undefined : dictionaries[locale];
+  const lookup = (text: string) => dictionary && Object.hasOwn(dictionary, text) ? dictionary[text] : undefined;
+  const translated = lookup(source) ?? source.split("\n\n").map(part => lookup(part) ?? part).join("\n\n");
   return translated.replace(/\{(\d+)\}/g, (match, key: string) => String(values[key] ?? match));
 }
 // Use only with authored lesson data, never with learner-written text or live AI replies.

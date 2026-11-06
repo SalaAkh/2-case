@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dictionaries, locales, translate, type Locale } from "../src/lib/i18n";
+import { dictionaries, locales, translate, translateAuthored, type Locale } from "../src/lib/i18n";
 import { examples, getExamples, findDemoExample } from "../src/lib/examples";
 import { lessons, getLessons, createInvestigation, makePassport } from "../src/lib/investigation";
 import { mentorRequestSchema, type MentorRequest } from "../src/lib/contracts";
@@ -20,6 +20,12 @@ function input(locale: Locale, index = 0): MentorRequest {
     language: examples[index].language, history: [], hintLevel: 0 };
 }
 describe("language coverage and lesson integrity", () => {
+  it("preserves unknown text including names of JavaScript object properties", () => {
+    for (const locale of locales) for (const text of ["constructor", "__proto__", "toString", "My own notes"]) {
+      expect(translate(locale, text)).toBe(text);
+      expect(translateAuthored(locale, text)).toBe(text);
+    }
+  });
   it("keeps both dictionaries complete with matching interpolation placeholders", () => {
     expect(Object.keys(dictionaries.kk).sort()).toEqual(Object.keys(dictionaries.en).sort());
     for (const dictionary of Object.values(dictionaries)) for (const [key, value] of Object.entries(dictionary)) {
