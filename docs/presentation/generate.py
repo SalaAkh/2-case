@@ -160,25 +160,30 @@ styles={
  'heading':ParagraphStyle('heading',fontName='DeckBold',fontSize=13,leading=18,spaceBefore=16,spaceAfter=8,keepWithNext=True),
  'body':ParagraphStyle('body',fontName='Deck',fontSize=10.5,leading=16,spaceAfter=8),
 }
-flow=[]
-for para in notes.split('\n\n'):
- para=para.strip()
- if not para:continue
- kind='title' if para.startswith('# ') else 'heading' if para.startswith('## ') else 'body'
- para=re.sub(r'^#{1,2} ','',para)
- para=escape(para).replace('\n','<br/>')
- para=re.sub(r'\*\*(.*?)\*\*',r'<b>\1</b>',para)
- flow.append(Paragraph(para,styles[kind]))
+def script_pdf(filename, markdown, label):
+ flow=[]
+ for para in markdown.split('\n\n'):
+  para=para.strip()
+  if not para:continue
+  kind='title' if para.startswith('# ') else 'heading' if para.startswith('## ') else 'body'
+  para=re.sub(r'^#{1,2} ','',para)
+  para=escape(para).replace('\n','<br/>')
+  para=re.sub(r'\*\*(.*?)\*\*',r'<b>\1</b>',para)
+  flow.append(Paragraph(para,styles[kind]))
 
-def footer(c,doc):
- c.setFont('Deck',8);c.setFillColor(HexColor('#666666'));c.drawString(42,25,'Zero-Spoiler · сценарий на двоих');c.drawRightString(A4[0]-42,25,str(doc.page))
-SimpleDocTemplate(str(ROOT/'pitch.pdf'),pagesize=A4,rightMargin=42,leftMargin=42,topMargin=38,bottomMargin=42,title='Zero-Spoiler — питч на двоих',author='Команда Zero-Spoiler').build(flow,onFirstPage=footer,onLaterPages=footer)
+ def footer(c,doc):
+  c.setFont('Deck',8);c.setFillColor(HexColor('#666666'));c.drawString(42,25,f'Zero-Spoiler · {label}');c.drawRightString(A4[0]-42,25,str(doc.page))
+ SimpleDocTemplate(str(ROOT/filename),pagesize=A4,rightMargin=42,leftMargin=42,topMargin=38,bottomMargin=42,title=f'Zero-Spoiler — {label}',author='Команда Zero-Spoiler').build(flow,onFirstPage=footer,onLaterPages=footer)
+
+solo_notes=(ROOT/'pitch-solo.md').read_text()
+script_pdf('pitch.pdf', notes, 'сценарий на двоих')
+script_pdf('pitch-solo.pdf', solo_notes, 'сценарий на одного')
 
 # Publish the same files and a browser-only reader for phones without a PDF viewer.
 public = ROOT.parents[1] / 'public'
 downloads = public / 'presentation'
 downloads.mkdir(parents=True, exist_ok=True)
-for filename in ['zero-spoiler.pptx', 'zero-spoiler.pdf', 'pitch.pdf']:
+for filename in ['zero-spoiler.pptx', 'zero-spoiler.pdf', 'pitch.pdf', 'pitch-solo.pdf']:
     shutil.copyfile(ROOT / filename, downloads / filename)
 
 slide_titles = [
@@ -211,12 +216,13 @@ def paragraphs_html(value):
             result.append('<p>' + inline_html(paragraph).replace('\n', '<br>') + '</p>')
     return ''.join(result)
 
-sections = re.split(r'^## (.+)\n', notes, flags=re.M)
-script_html = ''.join(
-    f'<details{" open" if i == 1 else ""}><summary>{escape(sections[i])}</summary>'
-    f'<div class="script-text">{paragraphs_html(sections[i+1])}</div></details>'
-    for i in range(1, len(sections), 2)
-)
+def script_html(markdown):
+    sections = re.split(r'^## (.+)\n', markdown, flags=re.M)
+    return ''.join(
+        f'<details{" open" if i == 1 else ""}><summary>{escape(sections[i])}</summary>'
+        f'<div class="script-text">{paragraphs_html(sections[i+1])}</div></details>'
+        for i in range(1, len(sections), 2)
+    )
 reader = '''<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -233,7 +239,7 @@ header a{display:inline-flex;align-items:center;min-height:44px;font-size:14px}.
 main{padding-top:44px}h1{font-size:clamp(34px,6vw,58px);line-height:1.1;letter-spacing:-1.8px;margin:0 0 20px}
 h2{font-size:28px;line-height:1.25;letter-spacing:-.7px;margin:0 0 12px}p{margin:0 0 18px}
 .kicker{font-size:11px;letter-spacing:1.4px;color:#d3f950;margin-bottom:16px}.intro{max-width:700px;color:#b4b8c1}
-.downloads{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:28px 0 24px}
+.downloads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:28px 0 24px}
 .download{display:flex;flex-direction:column;justify-content:space-between;gap:16px;border:1px solid #363940;border-radius:12px;padding:22px;background:#1c1e21;min-height:150px}
 .download:hover{border-color:#d3f950}.download small{color:#b4b8c1}.download span{color:#d3f950;font-size:14px}
 nav{display:flex;gap:12px;flex-wrap:wrap}nav a{display:inline-flex;align-items:center;min-height:46px;padding:0 18px;border:1px solid #363940;border-radius:7px}
@@ -249,16 +255,18 @@ footer{color:#b4b8c1;font-size:12px;border-top:1px solid #363940;margin-top:54px
 </style></head><body>
 <header><a class="brand" href="/">ZERO-SPOILER</a><a href="/investigation?mode=jury">Открыть демо</a></header>
 <main><div class="kicker">TOMORROW SCHOOL / МАТЕРИАЛЫ ЗАЩИТЫ</div>
-<h1>Презентация<br>и питч на двоих.</h1>
-<p class="intro">8 слайдов · 5 минут · парень и девушка. Слайды и реплики можно читать на этой странице. Файлы для показа и репетиции — ниже.</p>
+<h1>Презентация<br>и питч.</h1>
+<p class="intro">8 слайдов · 5 минут. Сценарии для одного человека и для двоих. Слайды и реплики можно читать на этой странице. Файлы для показа и репетиции — ниже.</p>
 <div class="downloads">
 <a class="download" href="/presentation/zero-spoiler.pdf"><div><strong>Презентация PDF</strong><br><small>8 слайдов · для просмотра и показа</small></div><span>Открыть PDF</span></a>
 <a class="download" href="/presentation/zero-spoiler.pptx" download><div><strong>PowerPoint</strong><br><small>Редактируемые слайды с заметками</small></div><span>Скачать PPTX</span></a>
-<a class="download" href="/presentation/pitch.pdf"><div><strong>Сценарий PDF</strong><br><small>Реплики, тайминг и ответы жюри</small></div><span>Открыть PDF</span></a>
+<a class="download" href="/presentation/pitch-solo.pdf"><div><strong>Питч на одного</strong><br><small>5 минут · демо · вариант на 3 минуты</small></div><span>Открыть PDF</span></a>
+<a class="download" href="/presentation/pitch.pdf"><div><strong>Питч на двоих</strong><br><small>Парень и девушка · реплики и тайминг</small></div><span>Открыть PDF</span></a>
 </div>
-<nav aria-label="Материалы"><a href="#slides">Смотреть слайды</a><a href="#pitch">Читать питч</a></nav>
+<nav aria-label="Материалы"><a href="#slides">Смотреть слайды</a><a href="#pitch-solo">Питч на одного</a><a href="#pitch">Питч на двоих</a></nav>
 <section id="slides"><h2>Презентация</h2><p>Нажмите на слайд, чтобы открыть его крупнее.</p><div class="slides">__SLIDES__</div></section>
-<section id="pitch"><h2>Сценарий выступления</h2><p>Откройте нужный слайд: внутри реплики, действия и время. В конце — подготовка, вариант на 3 минуты и ответы на вопросы.</p>__SCRIPT__</section>
+<section id="pitch-solo"><h2>Питч на одного человека</h2><p>5 минут под те же 8 слайдов. Внутри — реплики, действия и время. В конце — подготовка к выступлению в одиночку, готовый вариант на 3 минуты и ответы жюри.</p>__SOLO_SCRIPT__</section>
+<section id="pitch"><h2>Питч на двоих</h2><p>Парень и девушка. Откройте нужный слайд: внутри реплики, действия и время. В конце — подготовка, вариант на 3 минуты и ответы на вопросы.</p>__SCRIPT__</section>
 </main><footer>ZERO-SPOILER · Исследуй. Объясни. Примени.</footer></body></html>'''
-(public / 'presentation.html').write_text(reader.replace('__SLIDES__', ''.join(figures)).replace('__SCRIPT__', script_html), encoding='utf-8')
-print('Created PPTX, PDF slides, pitch PDF and public/presentation.html with browser previews')
+(public / 'presentation.html').write_text(reader.replace('__SLIDES__', ''.join(figures)).replace('__SCRIPT__', script_html(notes)).replace('__SOLO_SCRIPT__', script_html(solo_notes)), encoding='utf-8')
+print('Created PPTX, PDF slides, both pitch PDFs and public/presentation.html with browser previews')
