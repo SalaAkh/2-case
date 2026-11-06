@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { examples } from "./examples";
+import { localize, translate, type Locale } from "./i18n";
 
 export const lessonIds = ["index", "condition", "loop"] as const;
 export type LessonId = typeof lessonIds[number];
@@ -164,8 +165,8 @@ export function restoreInvestigation(raw: string | null, lessonId: LessonId, mod
   } catch { return null; }
 }
 
-export function makePassport(run: Investigation) {
-  const lesson = lessons[run.lessonId];
+export function makePassport(run: Investigation, locale: Locale = "ru") {
+  const lesson = getLessons(locale)[run.lessonId];
   return {
     format: "zero-spoiler-passport-v1", attemptId: run.id, mode: run.mode, lesson: lesson.concept,
     completed: run.stage === "passport", hypothesis: run.hypothesis, explanation: run.explanation, conclusion: run.conclusion,
@@ -174,7 +175,7 @@ export function makePassport(run: Investigation) {
     roleChecks: run.roleAnswers.map((answers, i) => ({ attempts: answers.length, firstCorrect: answers.length ? answers[0] === lesson.roleChecks[i].answer : null })),
     transfer: { reasoning: run.transferReason, attempts: run.transferAnswers.length, firstCorrect: run.transferAnswers.length ? run.transferAnswers[0] === lesson.transfer.answer : null, solved: run.transferAnswers.at(-1) === lesson.transfer.answer },
     elapsedSeconds: run.completedAt === null ? null : Math.max(0, Math.round((run.completedAt - run.startedAt) / 1000)),
-    note: "Учебный самоотчёт и ответы на подготовленные вопросы. Свободное объяснение не оценивалось ИИ. Это не сертификат освоения навыка. Время включает паузы.",
+    note: translate(locale, "Учебный самоотчёт и ответы на подготовленные вопросы. Свободное объяснение не оценивалось ИИ. Это не сертификат освоения навыка. Время включает паузы."),
   };
 }
 export function makePilotRecord(run: Investigation) {
@@ -189,4 +190,9 @@ export function makePilotRecord(run: Investigation) {
     limitation: "Разные вопросы до и после; повторные попытки и подсказки доступны. Один участник может экспортировать несколько попыток. Причинный эффект обучения не установлен." };
 }
 
-export function lessonExample(id: LessonId) { return examples.find(example => example.id === id)!; }
+export function lessonExample(id: LessonId, locale: Locale = "ru") { return localize(examples.find(example => example.id === id)!, locale); }
+const localizedLessons = new Map<Locale, typeof lessons>();
+export function getLessons(locale: Locale) {
+  if (!localizedLessons.has(locale)) localizedLessons.set(locale, localize(lessons, locale));
+  return localizedLessons.get(locale)!;
+}

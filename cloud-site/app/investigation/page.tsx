@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import InvestigationLab from "@/components/investigation-lab";
+import { LearningLoading } from "@/components/locale-provider";
+import { localizedMetadata, type LocalePageProps } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Режим расследования · Tomorrow School",
-  description: "Предскажите результат, проверьте гипотезу, станьте наставником и примените понимание в новой задаче.",
-};
+export async function generateMetadata(props: LocalePageProps) {
+  return localizedMetadata(props, "Режим расследования · Tomorrow School", "Предскажите результат, проверьте гипотезу, станьте наставником и примените понимание в новой задаче.");
+}
 
 export default function InvestigationPage() {
-  return <Suspense fallback={<p className="lab-loading" role="status">Открываем учебный путь…</p>}><InvestigationLab /></Suspense>;
+  return <Suspense fallback={<LearningLoading />}><InvestigationLab /></Suspense>;
 }

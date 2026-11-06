@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/components/locale-provider";
 import Editor, { loader, type BeforeMount } from "@monaco-editor/react";
 import { useEffect, useState } from "react";
 import type { Language } from "@/lib/contracts";
@@ -27,15 +28,17 @@ const configure: BeforeMount = (monaco) => {
 export default function CodeEditor({ code, language, theme, onChange }: {
   code: string; language: Language; theme: "dark" | "light"; onChange: (value: string) => void;
 }) {
+  const { t } = useI18n();
+
   const [failed, setFailed] = useState(false);
   useEffect(() => { loader.init().catch(() => setFailed(true)); }, []);
-  const fallback = <textarea aria-label="Код программы" className="code-fallback" value={code} maxLength={20000} onChange={e => onChange(e.target.value)} spellCheck={false} />;
-  if (failed) return <div className="editor-fallback-wrap"><span className="editor-notice">Редактор в базовом режиме</span>{fallback}</div>;
+  const fallback = <textarea aria-label={t("Код программы")} className="code-fallback" value={code} maxLength={20000} onChange={e => onChange(e.target.value)} spellCheck={false} />;
+  if (failed) return <div className="editor-fallback-wrap"><span className="editor-notice">{t("Редактор в базовом режиме")}</span>{fallback}</div>;
   return <Editor height="100%" language={language} path={`workspace.${language}`} value={code}
     theme={theme === "dark" ? "zero-dark" : "zero-light"} beforeMount={configure}
     onChange={value => onChange((value ?? "").slice(0, 20000))} loading={fallback}
     options={{
-      ariaLabel: "Код программы", automaticLayout: true, minimap: { enabled: false },
+      ariaLabel: t("Код программы"), automaticLayout: true, minimap: { enabled: false },
       fontSize: 13, lineHeight: 25, fontFamily: "'Cascadia Code', Consolas, monospace",
       fontLigatures: true, padding: { top: 23, bottom: 24 }, scrollBeyondLastLine: false,
       lineNumbersMinChars: 3, glyphMargin: false, folding: true, renderLineHighlight: "line",

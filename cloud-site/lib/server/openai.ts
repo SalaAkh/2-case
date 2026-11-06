@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { mentorDraftSchema, type MentorDraft, type MentorRequest } from "../contracts";
-import { buildStudentEnvelope, REVIEW_POLICY, ZERO_SPOILER_POLICY } from "./policy";
+import { buildStudentEnvelope, REVIEW_POLICY, policyForLocale } from "./policy";
 
 // server-only rejects accidental imports across the client boundary at build time.
 function client() {
@@ -14,7 +14,7 @@ export async function generate(input: MentorRequest, hintLevel: number, signal: 
   const response = await client().responses.parse({
     model: model(), store: false, max_output_tokens: 900,
     input: [
-      { role: "system", content: ZERO_SPOILER_POLICY },
+      { role: "system", content: policyForLocale(input.locale) },
       { role: "user", content: buildStudentEnvelope(input, hintLevel) },
     ],
     text: { format: zodTextFormat(mentorDraftSchema, "mentor_question") },

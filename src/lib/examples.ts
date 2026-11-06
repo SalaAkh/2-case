@@ -1,4 +1,5 @@
 import type { Language } from "./contracts";
+import { localize, locales, type Locale } from "./i18n";
 export type Example = { id: string; title: string; subtitle: string; language: Language; code: string; problem: string; topic: "index" | "condition" | "loop" };
 export const examples: Example[] = [
   {
@@ -18,5 +19,10 @@ export const examples: Example[] = [
   },
 ];
 export function findDemoExample(code: string, language: Language) {
-  return examples.find(item => item.language === language && item.code.trim() === code.trim());
+  return examples.find(item => item.language === language && locales.some(locale => getExamples(locale).some(translated => translated.id === item.id && translated.code.trim() === code.trim())));
+}
+const localized = new Map<Locale, Example[]>();
+export function getExamples(locale: Locale) {
+  if (!localized.has(locale)) localized.set(locale, localize(examples, locale));
+  return localized.get(locale)!;
 }

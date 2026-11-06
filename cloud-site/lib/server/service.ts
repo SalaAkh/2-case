@@ -1,3 +1,4 @@
+import { isLocale, translate, type Locale } from "../i18n";
 import { mentorRequestSchema, renderDraft, type MentorDraft, type MentorRequest, type MentorResponse } from "../contracts";
 import { demoReply } from "./demo";
 import { isSafeDraft, safeFallback } from "./guard";
@@ -44,6 +45,9 @@ function json(data: unknown, status = 200, headers?: Record<string, string>) {
 }
 export function createMentorHandler(deps: MentorDependencies) {
   return async function POST(request: Request): Promise<Response> {
+    const requestedLocale = request.headers.get("x-zero-spoiler-language");
+    let locale: Locale = isLocale(requestedLocale) ? requestedLocale : "ru";
+    const reply = (data: { error: string } | MentorResponse, status = 200, headers?: Record<string, string>) => json("error" in data ? { error: translate(locale, data.error) } : data, status, headers);
     const origin = request.headers.get("origin");
     // Next may construct request.url with its internal hostname. The browser's
     // Host is authoritative for same-origin checks and cannot be set by page JS.
@@ -56,22 +60,27 @@ export function createMentorHandler(deps: MentorDependencies) {
       } catch { originAllowed = false; }
     }
     if (!originAllowed || request.headers.get("sec-fetch-site") === "cross-site") {
-      return json({ error: "Запрос разрешён только из приложения." }, 403);
+      return reply({ error: "Запрос разрешён только из приложения." }, 403);
     }
     const budget = deps.limiter.consume();
-    if (!budget.allowed) return json({ error: `Слишком много запросов. Попробуйте через ${budget.retryAfter} сек.` }, 429, { "Retry-After": String(budget.retryAfter) });
+    if (!budget.allowed) return reply({ error: translate(locale, "Слишком много запросов. Попробуйте через {0} сек.", { "0": budget.retryAfter }) }, 429, { "Retry-After": String(budget.retryAfter) });
     try {
       const parsed = mentorRequestSchema.safeParse(await readJson(request));
-      if (!parsed.success) return json({ error: parsed.error.issues[0]?.message ?? "Проверьте данные запроса." }, 400);
-      const input = parsed.data;
-      const hintLevel = input.action === "hint" ? Math.min(3, input.hintLevel + 1) : input.hintLevel;
-      if (input.action === "hint" && input.hintLevel === 3) return json({ error: "Вы уже на третьем уровне. Продолжите диалог с наставником." }, 400);
-      if (input.mode === "demo") {
-        if (!deps.demoAvailable()) return json({ error: "Демонстрационный режим отключён на сервере." }, 503);
-        const result: MentorResponse = { message: demoReply(input, hintLevel), mode: "demo", hintLevel, guarded: false, source: "scripted-demo" };
-        return json(result);
+      if (!parsed.success) {
+        const message = parsed.error.issues[0]?.message;
+        return reply({ error: message && /[А-Яа-яЁё]/.test(message) ? message : "Проверьте данные запроса." }, 400);
       }
-      if (!deps.liveAvailable()) return json({ error: "OpenAI не подключён. Добавьте OPENAI_API_KEY в .env.local и перезапустите сервер. Можно выбрать деморежим." }, 503);
+      const input = parsed.data;
+      locale = input.locale ?? locale;
+      input.locale = locale;
+      const hintLevel = input.action === "hint" ? Math.min(3, input.hintLevel + 1) : input.hintLevel;
+      if (input.action === "hint" && input.hintLevel === 3) return reply({ error: "Вы уже на третьем уровне. Продолжите диалог с наставником." }, 400);
+      if (input.mode === "demo") {
+        if (!deps.demoAvailable()) return reply({ error: "Демонстрационный режим отключён на сервере." }, 503);
+        const result: MentorResponse = { message: demoReply(input, hintLevel), mode: "demo", hintLevel, guarded: false, source: "scripted-demo" };
+        return reply(result);
+      }
+      if (!deps.liveAvailable()) return reply({ error: "OpenAI не подключён. Добавьте OPENAI_API_KEY в .env.local и перезапустите сервер. Можно выбрать деморежим." }, 503);
       const signal = AbortSignal.any([request.signal, AbortSignal.timeout(35_000)]);
       const candidate = await deps.generate(input, hintLevel, signal);
       let approved = false;
@@ -84,12 +93,12 @@ export function createMentorHandler(deps: MentorDependencies) {
         mode: "live", hintLevel, guarded: !approved,
         source: approved ? "openai" : "safety-fallback",
       };
-      return json(result);
+      return reply(result);
     } catch (error) {
-      if (error instanceof PayloadError) return json({ error: error.message }, error.status);
+      if (error instanceof PayloadError) return reply({ error: error.message }, error.status);
       // Never forward SDK messages, request bodies or upstream response details.
-      if (error instanceof Error && /abort|timeout/i.test(error.name)) return json({ error: "Наставник не успел ответить. Попробуйте ещё раз." }, 504);
-      return json({ error: "Не удалось связаться с OpenAI. Проверьте ключ, доступ к модели и баланс API, затем повторите запрос." }, 502);
+      if (error instanceof Error && /abort|timeout/i.test(error.name)) return reply({ error: "Наставник не успел ответить. Попробуйте ещё раз." }, 504);
+      return reply({ error: "Не удалось связаться с OpenAI. Проверьте ключ, доступ к модели и баланс API, затем повторите запрос." }, 502);
     }
   };
 }

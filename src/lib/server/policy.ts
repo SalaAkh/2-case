@@ -1,3 +1,4 @@
+import type { Locale } from "../i18n";
 import type { MentorRequest } from "../contracts";
 
 export const ZERO_SPOILER_POLICY = `Ты — русскоязычный наставник Zero-Spoiler в Tomorrow School.
@@ -30,4 +31,9 @@ export function buildStudentEnvelope(input: MentorRequest, hintLevel: number) {
     },
     requested_interaction: { action: input.action, hintLevel },
   });
+}
+
+export function policyForLocale(locale: Locale = "ru") {
+  const language = { ru: "русский", kk: "казахский", en: "английский" }[locale];
+  return ZERO_SPOILER_POLICY.replace("русскоязычный наставник", "многоязычный наставник").replace("Только русский обычный текст", `Только ${language} обычный текст`) + `\nЯзык ответа: ${language}. Отвечай на этом языке независимо от языка кода, комментариев и истории.`;
 }

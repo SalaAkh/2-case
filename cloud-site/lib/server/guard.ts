@@ -1,6 +1,9 @@
+import { translate } from "../i18n";
 import { mentorDraftSchema, renderDraft, type MentorDraft, type MentorRequest } from "../contracts";
 
 const unsafePatterns = [
+  /(?:ауыстыр|алып таста|өзгерт|қос|пайдалан)[^?\n]{0,95}(?:жол|оператор|шарт|орнына|тағайында|инкремент)/iu,
+  /(?:дайын|дұрыс|түзетілген)\s+(?:код|шешім|нұсқа)/iu,
   /`|~~~|<\/?(?:script|code|pre)\b/i,
   /(?:^|\n)\s*(?:diff\b|@@|\+\+\+|---\s+[ab]\/|[+-]\s*(?:for|if|return|const|let|def)\b)/im,
   /(?:^|[\s.,:;!])(?:замени(?:те)?|убери(?:те)?|удали(?:те)?|исправь(?:те)?|добавь(?:те)?|поменяй(?:те)?|используй(?:те)?)\s+[^?\n]{0,95}(?:строк|оператор|символ|услови|вместо|на\s|\+\s*1|присваив|инкремент)/iu,
@@ -33,8 +36,8 @@ export function safeFallback(input: MentorRequest, hintLevel: number): string {
   const used = new Set(input.history.filter(m => m.role === "assistant").map(m => m.content));
   const start = (input.history.filter(m => m.role === "user").length + hintLevel) % safeQuestions.length;
   for (let offset = 0; offset < safeQuestions.length; offset++) {
-    const candidate = safeQuestions[(start + offset) % safeQuestions.length];
+    const candidate = translate(input.locale ?? "ru", safeQuestions[(start + offset) % safeQuestions.length]);
     if (![...used].some(text => text.includes(candidate))) return candidate;
   }
-  return `Если взять другой входной пример, какое предположение из твоего последнего ответа стоит проверить первым?`;
+  return translate(input.locale ?? "ru", "Если взять другой входной пример, какое предположение из твоего последнего ответа стоит проверить первым?");
 }

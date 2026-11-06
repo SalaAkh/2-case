@@ -18,6 +18,7 @@ export type ChatMessage = z.infer<typeof messageSchema>;
 
 export const mentorRequestSchema = z.object({
   mode: z.enum(["demo", "live"]),
+  locale: z.enum(["ru", "kk", "en"]).optional(),
   action: z.enum(["start", "message", "hint"]),
   language: z.enum(languages),
   code: z.string().trim().min(1, "Добавьте код для разбора.").max(20000),
